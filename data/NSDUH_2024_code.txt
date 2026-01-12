@@ -1,0 +1,33 @@
+clear
+set mem 700m
+cd "C:\Users\shaha\OneDrive\Desktop\TEDS"
+use NSDUH_2024.dta, replace
+keep if age3 >= 4
+
+gen group = .
+replace group = 0 if svyrdudany == 4
+replace group = 1 if svyrdudany == 1
+replace group = 2 if inlist(svyrdudany, 2, 3)
+
+gen pincome_mid = .
+replace pincome_mid =  5000  if irpinc3 == 1
+replace pincome_mid = 15000  if irpinc3 == 2
+replace pincome_mid = 25000  if irpinc3 == 3
+replace pincome_mid = 35000  if irpinc3 == 4
+replace pincome_mid = 45000  if irpinc3 == 5
+replace pincome_mid = 62500  if irpinc3 == 6
+replace pincome_mid = 90000  if irpinc3 == 7
+
+drop if missing(pincome_mid) | missing(group)
+
+svyset [pweight=analwt2_c]
+
+* Overall mean income (everyone in your kept sample)
+svy: mean pincome_mid
+
+* Group-specific means
+svy: mean pincome_mid if group == 0   
+svy: mean pincome_mid if group == 1   
+svy: mean pincome_mid if group == 2 
+svy: mean pincome_mid if group == 1 |group == 2   
+

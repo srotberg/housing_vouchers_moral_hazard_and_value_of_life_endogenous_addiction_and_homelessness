@@ -1,0 +1,31 @@
+clear
+set mem 700m
+cd "C:\Users\shaha\OneDrive\Desktop\SCF"
+use SCF_2022.dta
+
+*drop if age<18 | age>85
+
+gen var_to_use=income
+
+scalar gaps=0.2
+scalar lower_bound=0.8
+scalar upper_bound=1.0
+
+egen total_households=sum(wgt)
+
+gen is_renter=0
+replace is_renter=1 if hhouses==0
+
+egen total_var_to_use=sum(wgt*var_to_use)
+sort var_to_use
+
+gen pdf=wgt/total_households
+gen cdf=.
+replace cdf=pdf[1] if _n == 1
+replace cdf=cdf[_n-1]+pdf[_n] if _n > 1
+
+drop if cdf<lower_bound | cdf>upper_bound
+egen total_households_quintile=sum(wgt)
+
+egen var_to_use_quintile=sum(wgt*is_renter)
+display 100*((var_to_use_quintile)/(total_households_quintile))

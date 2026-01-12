@@ -1,0 +1,51 @@
+clear
+set mem 700m
+cd "C:\Users\shaha\OneDrive\Desktop\SCF"
+use SCF_2022.dta
+	
+scalar compute_for_ss=1
+scalar include_asset_income=1
+
+scalar lower_bound=0.05
+scalar upper_bound=0.1
+scalar lower_bound_for_top=0.99
+
+if compute_for_ss==1 {
+
+	gen var_to_use=ssretinc+include_asset_income*(kginc+intdivinc)
+	keep if age>65
+
+}
+
+if compute_for_ss==0 {
+
+	gen var_to_use=networth
+
+}
+
+egen total_var_to_use=sum(wgt*var_to_use)
+sort var_to_use
+egen total_households=sum(wgt)
+gen pdf=wgt/total_households
+gen cdf=.
+replace cdf=pdf[1] if _n==1
+replace cdf=cdf[_n-1]+pdf[_n] if _n>1
+
+egen var_to_use_bottom_1=sum(wgt*var_to_use) if cdf<=lower_bound
+display 100*(var_to_use_bottom_1/total_var_to_use)
+
+egen var_to_use_bottom_1_5=sum(wgt*var_to_use) if cdf>lower_bound & cdf<=upper_bound
+sum var_to_use_bottom_1_5
+scalar obs=r(N)
+dis obs
+replace var_to_use_bottom_1_5=0 if var_to_use_bottom_1_5==.
+egen sum_var_to_use_bottom_1_5=sum(var_to_use_bottom_1_5)
+display 100*(((sum_var_to_use_bottom_1_5)/obs)/total_var_to_use)
+
+egen var_to_use_top_1=sum(wgt*var_to_use) if cdf>lower_bound_for_top
+sum var_to_use_top_1
+scalar obs=r(N)
+dis obs
+replace var_to_use_top_1=0 if var_to_use_top_1==.
+egen sum_var_to_use_top_1=sum(var_to_use_top_1)
+display 100*(((sum_var_to_use_top_1)/obs)/total_var_to_use)

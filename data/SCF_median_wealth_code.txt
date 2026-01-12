@@ -1,0 +1,10 @@
+clear
+use SCF_2022.dta
+
+keep if hhouses==0
+sort networth
+egen total_households=sum(wgt)
+gen pdf=wgt/total_households
+gen cdf=.
+replace cdf=pdf[1] if _n == 1
+replace cdf=cdf[_n-1]+pdf[_n] if _n > 1

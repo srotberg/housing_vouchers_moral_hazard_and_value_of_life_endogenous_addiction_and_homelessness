@@ -1,0 +1,77 @@
+clear
+set mem 700m
+cd "C:\Users\shaha\OneDrive\Desktop\SCF"
+use SCF_2022.dta
+
+egen total_networth=sum(wgt*networth)
+egen total_income=sum(wgt*income)
+display total_networth/total_income
+
+egen total_mortgages=sum(wgt*mrthel)
+egen total_housing_value_owners=sum(wgt*houses)
+display total_mortgage/total_housing_value_owners
+
+egen total_households=sum(wgt)
+egen total_homeowners=sum(wgt*hhouses)
+display total_homeowners/total_households
+
+egen total_rent=sum(wgt*12*rent*(1-hhouses))
+egen total_renters_income=sum(wgt*income*(1-hhouses))
+display total_rent/total_renters_income
+
+sort income
+gen pdf=wgt/total_households
+gen cdf=.
+replace cdf=pdf[1] if _n == 1
+replace cdf=cdf[_n-1]+pdf[_n] if _n > 1
+drop if cdf>0.5001 | cdf<0.4999
+
+egen total_households_median=sum(wgt)
+egen total_income_median=sum(wgt*income)
+display total_income_median/total_households_median
+
+clear
+use SCF_2022.dta
+
+gen property_tax_rate=tpay/houses
+replace property_tax_rate=0 if hhouses==0
+egen total_property_tax_rate=sum(wgt*property_tax_rate)
+egen total_homeowners=sum(wgt*hhouses)
+display total_property_tax_rate/total_homeowners
+
+gen housing_cost_to_income=12*rent/income
+replace housing_cost_to_income=(tpay+12*mortpay)/income if hhouses==1
+egen total_housing_cost_to_income=sum(wgt*housing_cost_to_income)
+egen total_households=sum(wgt)
+display total_housing_cost_to_income/total_households
+
+clear
+use SCF_2022.dta
+
+drop if age<26 | age>85 | rent<0 | income<=1000 | hhouses==1
+gen rent_to_income=12*rent/income
+egen total_rent_to_income=sum(wgt*rent_to_income)
+egen total_renters=sum(wgt)
+display total_rent_to_income/total_renters
+
+clear
+use SCF_2022.dta
+
+egen total_households=sum(wgt)
+egen total_income=sum(wgt*income)
+display total_income/total_households
+
+egen total_homeowners_wealth=sum(wgt*hhouses*networth)
+egen total_renters_wealth=sum(wgt*(1-hhouses)*networth)
+egen total_owners=sum(wgt*hhouses)
+egen total_renters=sum(wgt*(1-hhouses))
+
+gen non_housing_wealth=networth-homeeq
+gen house_poor=0
+replace house_poor=1 if hhouses==1 & mrthel>non_housing_wealth
+egen total_house_poor=sum(wgt*house_poor)
+
+display "house poor homeowners=" total_house_poor/total_owners
+display "average owners net wealth=" total_homeowners_wealth/total_owners
+display "average renters net wealth=" total_renters_wealth/total_renters
+display "average owners/average renters=" (total_homeowners_wealth/total_owners)/(total_renters_wealth/total_renters)

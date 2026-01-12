@@ -1,0 +1,32 @@
+clear
+set mem 700m
+cd "C:\Users\shaha\OneDrive\Desktop\SCF"
+use SCF_2022.dta
+
+*drop if age<26 | age>85
+
+scalar cost_burden=0.3
+scalar lower_bound=0.8
+scalar upper_bound=1.0
+
+egen total_households=sum(wgt)
+
+sort income
+gen pdf=wgt/total_households
+gen cdf=.
+replace cdf=pdf[1] if _n == 1
+replace cdf=cdf[_n-1]+pdf[_n] if _n > 1
+
+drop if hhouses==1 | income<=0 | rent<=0
+
+drop if cdf<lower_bound | cdf>upper_bound
+
+gen rent_to_income=12*rent/income
+
+gen is_cost_burdened=0
+replace is_cost_burdened=1 if rent_to_income>cost_burden
+
+egen total_renters=sum(wgt)
+
+egen total_cost_burdened_renters=sum(wgt*is_cost_burdened)
+display 100*(total_cost_burdened_renters/total_renters)

@@ -1,0 +1,48 @@
+clear
+set mem 700m
+cd "C:\Users\shaha\OneDrive\Desktop\SCF"
+use SCF_2022.dta
+
+mat cdf_of_rents=J(100,1,0)
+
+gen is_renter=0
+replace is_renter=1 if hhouses==0
+
+drop if age<26 | age>85 | is_renter==0 | rent<=0 | income<=0
+
+gen var_to_use=(12*rent)/income
+sort var_to_use
+
+egen total_renters=sum(wgt)
+gen pdf=wgt/total_renters
+gen cdf=.
+replace cdf=pdf[1] if _n==1
+replace cdf=cdf[_n-1]+pdf[_n] if _n>1
+
+local i=1
+
+while `i'<=100 {
+
+	capture drop total_renters_below_x
+
+	egen total_renters_below_x=sum(wgt) if var_to_use<=`i'/100
+
+	mat cdf_of_rents[`i',1]=100*(total_renters_below_x[1]/total_renters[1])
+
+	display `i'
+
+	display cdf_of_rents[`i',1]
+
+	local i=`i'+1
+
+}
+
+local i=1
+
+while `i'<=100 {
+
+	display cdf_of_rents[`i',1]
+
+	local i=`i'+1
+
+}
