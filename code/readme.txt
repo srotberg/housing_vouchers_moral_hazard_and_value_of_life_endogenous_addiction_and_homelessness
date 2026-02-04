@@ -14,7 +14,7 @@ For generating the benchmark, please set:
 
 		is_counterfactual=0
         partial_equilibrium=0
-        probability_of_voucher_benchmark_used=0.054
+        probability_of_voucher_benchmark_used=0.06
         increased_prob_of_voucher_if_homeless_and_addicted=1
         how_many_iterations_to_do_on_distribution=0
 		compare_to_original_benchmark=1
@@ -27,7 +27,7 @@ Experiments 1, 2, 3, and 4
 
 		is_counterfactual=1
         partial_equilibrium=0
-        probability_of_voucher_benchmark_used=0.054
+        probability_of_voucher_benchmark_used=0.06
         increased_prob_of_voucher_if_homeless_and_addicted=0
         how_many_iterations_to_do_on_distribution=0
 		compare_to_original_benchmark=1
@@ -36,7 +36,7 @@ Experiments 1, 2, 3, and 4
 
 		is_counterfactual=1
         partial_equilibrium=1
-        probability_of_voucher_benchmark_used=0.054
+        probability_of_voucher_benchmark_used=0.06
         increased_prob_of_voucher_if_homeless_and_addicted=0
         how_many_iterations_to_do_on_distribution=1
 		compare_to_original_benchmark=1
@@ -45,7 +45,7 @@ Experiments 1, 2, 3, and 4
 
 		is_counterfactual=1
         partial_equilibrium=1
-        probability_of_voucher_benchmark_used=0.054
+        probability_of_voucher_benchmark_used=0.06
         increased_prob_of_voucher_if_homeless_and_addicted=0
         how_many_iterations_to_do_on_distribution=5
 		compare_to_original_benchmark=1
@@ -54,7 +54,7 @@ Experiments 1, 2, 3, and 4
 
 		is_counterfactual=1
         partial_equilibrium=1
-        probability_of_voucher_benchmark_used=0.054
+        probability_of_voucher_benchmark_used=0.06
         increased_prob_of_voucher_if_homeless_and_addicted=0
         how_many_iterations_to_do_on_distribution=100
 		compare_to_original_benchmark=1
@@ -152,3 +152,4 @@ Experiments 1, 2, 3, and 4
 
 
 	
+
