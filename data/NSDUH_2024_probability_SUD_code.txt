@@ -1,0 +1,187 @@
+clear
+cd "C:\Users\shaha\OneDrive\Desktop\TEDS"
+use NSDUH_2024.dta, clear
+
+capture program drop make_shares
+program define make_shares
+    tempname H
+    postfile `H' str12 drug double frac_light frac_heavy double w_users using light_heavy_shares.dta, replace
+
+    foreach d in coc her hal inh mth {
+        preserve
+        if "`d'"=="coc" local freq cocydays
+        else if "`d'"=="her" local freq herydays
+        else if "`d'"=="hal" local freq hallndayyr
+        else if "`d'"=="inh" local freq inhndayyr2
+        else if "`d'"=="mth" local freq methndayyr
+
+        keep if !missing(`freq') & `freq'!=6
+        gen byte light = inlist(`freq',1,2)
+        gen byte heavy = inlist(`freq',3,4,5)
+
+        quietly summarize analwt2_c, meanonly
+        local w_users = r(sum)
+
+        if _N==0 | `w_users'==0 {
+            post `H' ("`d'") (.) (.) (.)
+        }
+        else {
+            quietly mean light heavy [pw=analwt2_c]
+            matrix b = e(b)
+            post `H' ("`d'") (b[1,1]) (b[1,2]) (`w_users')
+        }
+        restore
+    }
+    postclose `H'
+end
+
+capture program drop make_sudrates
+program define make_sudrates
+    tempname G
+    postfile `G' str12 drug double psud_light psud_heavy double w_light w_heavy using light_heavy_sudrates.dta, replace
+
+    foreach d in coc her hal inh mth {
+        preserve
+        if "`d'"=="coc" {
+            local freq cocydays
+            local sud  irpyud5coc
+        }
+        else if "`d'"=="her" {
+            local freq herydays
+            local sud  irpyud5her
+        }
+        else if "`d'"=="hal" {
+            local freq hallndayyr
+            local sud  irpyud5hal
+        }
+        else if "`d'"=="inh" {
+            local freq inhndayyr2
+            local sud  irpyud5inh
+        }
+        else if "`d'"=="mth" {
+            local freq methndayyr
+            local sud  irpyud5mth
+        }
+
+        keep if !missing(`freq') & `freq'!=6 & !missing(`sud')
+        gen byte light = inlist(`freq',1,2)
+        gen byte heavy = inlist(`freq',3,4,5)
+
+        quietly summarize analwt2_c if light==1, meanonly
+        local wL = r(sum)
+        quietly summarize analwt2_c if heavy==1, meanonly
+        local wH = r(sum)
+
+        if `wL'>0 {
+            quietly mean `sud' [pw=analwt2_c] if light==1
+            matrix bl = e(b)
+            local pL = bl[1,1]
+        }
+        else local pL = .
+
+        if `wH'>0 {
+            quietly mean `sud' [pw=analwt2_c] if heavy==1
+            matrix bh = e(b)
+            local pH = bh[1,1]
+        }
+        else local pH = .
+
+        post `G' ("`d'") (`pL') (`pH') (`wL') (`wH')
+        restore
+    }
+    postclose `G'
+end
+
+capture program drop make_shares_nosud
+program define make_shares_nosud
+    tempname N
+    postfile `N' str12 drug double frac_light_nosud frac_heavy_nosud double w_users_nosud using light_heavy_shares_nosud.dta, replace
+
+    foreach d in coc her hal inh mth {
+        preserve
+        if "`d'"=="coc" {
+            local freq cocydays
+            local sud  irpyud5coc
+        }
+        else if "`d'"=="her" {
+            local freq herydays
+            local sud  irpyud5her
+        }
+        else if "`d'"=="hal" {
+            local freq hallndayyr
+            local sud  irpyud5hal
+        }
+        else if "`d'"=="inh" {
+            local freq inhndayyr2
+            local sud  irpyud5inh
+        }
+        else if "`d'"=="mth" {
+            local freq methndayyr
+            local sud  irpyud5mth
+        }
+
+        keep if !missing(`freq') & `freq'!=6 & !missing(`sud') & `sud'==0
+        gen byte light = inlist(`freq',1,2)
+        gen byte heavy = inlist(`freq',3,4,5)
+
+        quietly summarize analwt2_c, meanonly
+        local w_users0 = r(sum)
+
+        if _N==0 | `w_users0'==0 {
+            post `N' ("`d'") (.) (.) (.)
+        }
+        else {
+            quietly mean light heavy [pw=analwt2_c]
+            matrix b = e(b)
+            post `N' ("`d'") (b[1,1]) (b[1,2]) (`w_users0')
+        }
+        restore
+    }
+    postclose `N'
+end
+
+make_shares
+make_sudrates
+make_shares_nosud
+
+use light_heavy_shares.dta, clear
+gen wL_contrib = frac_light * w_users
+gen wH_contrib = frac_heavy * w_users
+quietly summarize wL_contrib, meanonly
+local numL = r(sum)
+quietly summarize wH_contrib, meanonly
+local numH = r(sum)
+quietly summarize w_users, meanonly
+local den = r(sum)
+display "Avg frac light = " %9.4f (`numL'/`den')
+display "Avg frac heavy = " %9.4f (`numH'/`den')
+
+use light_heavy_sudrates.dta, clear
+gen w_pL = psud_light * w_light
+gen w_pH = psud_heavy * w_heavy
+quietly summarize w_pL, meanonly
+local num_pL = r(sum)
+quietly summarize w_light, meanonly
+local den_pL = r(sum)
+quietly summarize w_pH, meanonly
+local num_pH = r(sum)
+quietly summarize w_heavy, meanonly
+local den_pH = r(sum)
+local avg_psud_light = `num_pL'/`den_pL'
+local avg_psud_heavy = `num_pH'/`den_pH'
+display "Avg P(SUD|light) = " %9.4f `avg_psud_light'
+display "Avg P(SUD|heavy) = " %9.4f `avg_psud_heavy'
+display "Avg diff heavy-light = " %9.4f (`avg_psud_heavy' - `avg_psud_light')
+display "Avg ratio heavy/light = " %9.4f (`avg_psud_heavy' / `avg_psud_light')
+
+use light_heavy_shares_nosud.dta, clear
+gen wL0 = frac_light_nosud * w_users_nosud
+gen wH0 = frac_heavy_nosud * w_users_nosud
+quietly summarize wL0, meanonly
+local numL0 = r(sum)
+quietly summarize wH0, meanonly
+local numH0 = r(sum)
+quietly summarize w_users_nosud, meanonly
+local den0 = r(sum)
+display "Avg frac light | user & no SUD = " %9.4f (`numL0'/`den0')
+display "Avg frac heavy | user & no SUD = " %9.4f (`numH0'/`den0')
