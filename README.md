@@ -1,4 +1,4 @@
-Replication code for "Housing First or Treatment First" by Shahar Rotberg
+Replication code for "Housing First or Treatment First?" by Shahar Rotberg
 
 The "code" folder contains the Fortran code that runs the quantitative experiments. Please see the text file "readme.txt" in this folder for detailed instructions on how to compile and run the code.
 
